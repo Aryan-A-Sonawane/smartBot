@@ -1,0 +1,37 @@
+# Production stack for a single EC2 host:
+#   smartbot  — the FastAPI agent (built from ./Dockerfile)
+#   caddy     — TLS termination + reverse proxy (free Let's Encrypt cert)
+#
+# Usage on the EC2 box (from backend/):
+#   docker compose up -d --build
+#
+# Requires backend/.env to define at least:
+#   GEMINI_API_KEY=...                       # your rotated key
+#   BACKEND_DOMAIN=smartbot-you.duckdns.org  # your DuckDNS subdomain
+#   ALLOWED_ORIGINS=https://<your-app>.vercel.app
+services:
+  smartbot:
+    build: .
+    env_file: .env
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    environment:
+      - BACKEND_DOMAIN=${BACKEND_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - smartbot
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

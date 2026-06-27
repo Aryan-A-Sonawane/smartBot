@@ -1,0 +1,6 @@
+# Caddy auto-provisions a Let's Encrypt HTTPS cert for this domain and
+# reverse-proxies to the FastAPI container. The domain comes from the
+# BACKEND_DOMAIN env var (set in backend/.env), e.g. smartbot-aryan.duckdns.org
+{$BACKEND_DOMAIN} {
+    reverse_proxy smartbot:8000
+}
