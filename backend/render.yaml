@@ -27,5 +27,7 @@ services:
         value: tiny # fits the free tier's 512 MB RAM; use base/small on a larger plan
       - key: MAX_FILE_MB
         value: "25"
+      - key: MAX_AUDIO_MINUTES
+        value: "10" # reject longer clips with a clear message (512 MB memory guard)
       - key: ALLOWED_ORIGINS
         sync: false # set to your Vercel URL, e.g. https://smartbot.vercel.app

@@ -23,6 +23,13 @@ export function EmptyState({
         </div>
       </div>
       <SampleGallery onLoad={onLoad} />
+
+      <p className="max-w-md text-xs leading-relaxed text-muted-foreground/70">
+        Heads up: this hosted demo runs on a small free instance. Short audio clips
+        (a few minutes) and modest files work best — very long audio may be declined
+        to stay within memory, and the first request after a while can take ~30–50 s
+        while the server wakes up.
+      </p>
     </div>
   );
 }

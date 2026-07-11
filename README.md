@@ -257,10 +257,19 @@ git add -A && git commit -m "Deploy" && git push
 - `https://<render-url>/health` → `{"status":"ok","llm_configured":true}`.
 - Open the Vercel URL, load a sample from the gallery, and send.
 
-**Free-tier notes (important):**
-- Render **free** = 512 MB RAM and **spins down after ~15 min** idle (first request then takes ~50 s to wake). Text / PDF / image / YouTube work well.
-- **Audio** transcription is memory-heavy: the blueprint uses `WHISPER_MODEL=tiny` so it fits 512 MB. For better audio accuracy, upgrade the Render service to a paid plan (2 GB) and set `WHISPER_MODEL=base` (or `small`).
-- To keep the demo warm, hit `/health` on a cron (e.g. cron-job.org) or upgrade off the free plan.
+### What to expect on Render free tier (512 MB)
+
+The blueprint is tuned for the free tier; here's exactly how each limit behaves so nothing looks "broken":
+
+| Limit | Behaviour | Mitigation |
+|---|---|---|
+| **512 MB RAM** | Text / PDF / image / YouTube / RAG all work fine. | — |
+| **Audio length** | Clips are transcribed with `WHISPER_MODEL=tiny`; **clips longer than `MAX_AUDIO_MINUTES` (10) are declined with a clear message** (a duration pre-check) rather than OOM-crashing. | Use short clips, or upgrade to a 2 GB plan and set `WHISPER_MODEL=base`/`small` + a higher `MAX_AUDIO_MINUTES`. |
+| **Spins down after ~15 min idle** | First request then takes ~30–50 s while the container wakes (also re-downloads the tiny model to its ephemeral disk). | Ping `/health` on a cron (e.g. cron-job.org) to keep it warm, or upgrade off free. |
+| **0.1 CPU, single instance** | Heavy requests are slower; two concurrent heavy jobs can be tight on memory. | Fine for a single tester/demo; upgrade for load. |
+| **Uploads > `MAX_FILE_MB` (25)** | Rejected before processing. | Raise the env var on a bigger plan. |
+
+The frontend also shows a short heads-up on the empty screen so testers know large audio may be declined and that the first request can be slow.
 
 ---
 

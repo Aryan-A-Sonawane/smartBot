@@ -16,7 +16,9 @@ from .image_ocr import extract_image
 from .pdf import extract_pdf
 
 
-async def _route(file: InputFile, gemini: GeminiClient, whisper_model: str) -> ExtractionOutcome:
+async def _route(
+    file: InputFile, gemini: GeminiClient, whisper_model: str, max_audio_minutes: int
+) -> ExtractionOutcome:
     kind = kind_for_mime(file.filename, file.content_type)
     try:
         if kind == "image":
@@ -24,7 +26,7 @@ async def _route(file: InputFile, gemini: GeminiClient, whisper_model: str) -> E
         if kind == "pdf":
             return await extract_pdf(file, gemini)
         if kind == "audio":
-            return await extract_audio(file, whisper_model)
+            return await extract_audio(file, whisper_model, max_audio_minutes)
         # Unknown type: try to read as UTF-8 text, else flag unsupported.
         try:
             text = file.data.decode("utf-8").strip()
@@ -53,11 +55,16 @@ async def _route(file: InputFile, gemini: GeminiClient, whisper_model: str) -> E
 
 
 async def extract_all(
-    files: list[InputFile], gemini: GeminiClient, whisper_model: str
+    files: list[InputFile],
+    gemini: GeminiClient,
+    whisper_model: str,
+    max_audio_minutes: int = 30,
 ) -> list[ExtractionOutcome]:
     """Extract every file concurrently, preserving input order."""
     if not files:
         return []
     return list(
-        await asyncio.gather(*(_route(f, gemini, whisper_model) for f in files))
+        await asyncio.gather(
+            *(_route(f, gemini, whisper_model, max_audio_minutes) for f in files)
+        )
     )

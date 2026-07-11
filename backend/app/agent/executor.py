@@ -62,7 +62,7 @@ async def run_agent(
     try:
         # ---- 1. Parallel extraction of every input ----
         outcomes: list[ExtractionOutcome] = await extract_all(
-            files, gemini, settings.whisper_model
+            files, gemini, settings.whisper_model, settings.max_audio_minutes
         )
 
         query_doc = [text_doc(query)] if query.strip() else []

@@ -5,6 +5,7 @@ The Whisper model is loaded lazily and cached (it is expensive to construct).
 
 from __future__ import annotations
 
+import io
 import os
 import tempfile
 import time
@@ -13,6 +14,23 @@ from typing import Any
 
 from ..schemas import ExtractedDoc
 from .base import ExtractionOutcome, InputFile
+
+
+def _probe_duration(data: bytes) -> float | None:
+    """Read audio duration from metadata only (no full decode), so we can reject
+    clips that would exhaust memory on a small instance before ever loading them."""
+    try:
+        import av  # bundled with faster-whisper
+
+        with av.open(io.BytesIO(data)) as container:
+            if container.duration:
+                return container.duration / 1_000_000.0  # AV_TIME_BASE is microseconds
+            for stream in container.streams:
+                if stream.type == "audio" and stream.duration and stream.time_base:
+                    return float(stream.duration * stream.time_base)
+    except Exception:
+        return None
+    return None
 
 _MODEL_CACHE: dict[str, Any] = {}
 
@@ -85,11 +103,30 @@ def _fmt_duration(seconds: float) -> str:
     return f"{seconds // 60}m {seconds % 60:02d}s"
 
 
-async def extract_audio(file: InputFile, model_size: str) -> ExtractionOutcome:
+async def extract_audio(
+    file: InputFile, model_size: str, max_minutes: int = 30
+) -> ExtractionOutcome:
     import asyncio
     import os
 
     started = time.time()
+
+    # Memory guard: reject over-long clips up front (metadata probe, no decode) so
+    # a big file returns a clear message instead of OOM-killing a small instance.
+    duration = await asyncio.to_thread(_probe_duration, file.data)
+    if duration and duration > max_minutes * 60:
+        return ExtractionOutcome(
+            doc=None,
+            tool="audio_transcribe",
+            duration_ms=int((time.time() - started) * 1000),
+            ok=False,
+            error=(
+                f"This audio is ~{round(duration / 60)} min long. The hosted demo runs on a "
+                f"memory-limited instance and supports clips up to {max_minutes} min — please "
+                "try a shorter clip (longer files work when running locally)."
+            ),
+        )
+
     suffix = os.path.splitext(file.filename)[1] or ".mp3"
     try:
         text, duration = await asyncio.to_thread(

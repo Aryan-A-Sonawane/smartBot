@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     # ----- Extraction -----
     whisper_model: str = Field(default="base", alias="WHISPER_MODEL")
     max_file_mb: int = Field(default=25, alias="MAX_FILE_MB")
+    # Reject audio longer than this (memory guard for small hosted instances).
+    max_audio_minutes: int = Field(default=30, alias="MAX_AUDIO_MINUTES")
 
     @property
     def origins_list(self) -> list[str]:
