@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Menu, PanelRightOpen } from "lucide-react";
+import { Activity, Bot, Menu, PanelRightOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Sidebar } from "@/components/sidebar";
 import { Inspector } from "@/components/inspector";
+import { FeaturesDialog } from "@/components/features-dialog";
 import { MessageList } from "@/components/chat/message-list";
 import { EmptyState } from "@/components/chat/empty-state";
 import { Composer, type ComposerHandle } from "@/components/chat/composer";
@@ -18,6 +19,7 @@ export default function Home() {
     useChat();
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const composerRef = useRef<ComposerHandle>(null);
 
   // Start with both side panels closed on small screens (they're overlays there).
@@ -30,6 +32,11 @@ export default function Home() {
 
   const messages = active.messages;
   const hasMessages = messages.length > 0;
+
+  const openInspector = () => {
+    setRightOpen(true);
+    if (isMobile()) setLeftOpen(false);
+  };
 
   return (
     <div className="relative flex h-dvh overflow-hidden bg-background text-foreground">
@@ -60,6 +67,7 @@ export default function Home() {
           if (isMobile()) setLeftOpen(false);
         }}
         onDelete={deleteChat}
+        onOpenFeatures={() => setFeaturesOpen(true)}
       />
 
       {/* MIDDLE: chat window */}
@@ -82,16 +90,24 @@ export default function Home() {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {/* Mobile: quick access to the Features showcase */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label="Features"
+              onClick={() => setFeaturesOpen(true)}
+            >
+              <Sparkles className="size-4 text-primary" />
+            </Button>
             <ModeToggle />
             {!rightOpen && (
               <Button
                 variant="ghost"
                 size="icon"
+                className="hidden md:inline-flex"
                 aria-label="Open agent activity"
-                onClick={() => {
-                  setRightOpen(true);
-                  if (isMobile()) setLeftOpen(false);
-                }}
+                onClick={openInspector}
               >
                 <PanelRightOpen className="size-4" />
               </Button>
@@ -120,12 +136,22 @@ export default function Home() {
         </div>
       </main>
 
+      {/* Mobile: sticky tab so testers discover the agent-activity panel */}
+      {!rightOpen && (
+        <button
+          onClick={openInspector}
+          aria-label="Open agent activity"
+          className="fixed right-0 top-1/3 z-30 flex items-center gap-1 rounded-l-lg bg-primary py-3 pl-1 pr-1.5 text-[11px] font-semibold tracking-wide text-primary-foreground shadow-lg md:hidden"
+        >
+          <span className="[writing-mode:vertical-rl]">Agent activity</span>
+          <Activity className="size-3.5 rotate-90" />
+        </button>
+      )}
+
       {/* RIGHT: agent transparency */}
-      <Inspector
-        messages={messages}
-        open={rightOpen}
-        onClose={() => setRightOpen(false)}
-      />
+      <Inspector messages={messages} open={rightOpen} onClose={() => setRightOpen(false)} />
+
+      <FeaturesDialog open={featuresOpen} onClose={() => setFeaturesOpen(false)} />
     </div>
   );
 }

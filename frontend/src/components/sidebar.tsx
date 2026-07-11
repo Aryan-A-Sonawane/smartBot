@@ -6,6 +6,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ type Props = {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onOpenFeatures: () => void;
 };
 
 export function Sidebar({
@@ -31,6 +33,7 @@ export function Sidebar({
   onSelect,
   onNew,
   onDelete,
+  onOpenFeatures,
 }: Props) {
   // Which chat is currently showing its "Delete this chat?" confirmation.
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -135,6 +138,21 @@ export function Sidebar({
           </div>
         </ScrollArea>
       )}
+
+      {/* Bottom-left: Features showcase */}
+      <div className="mt-auto border-t border-border p-2">
+        <Button
+          variant="ghost"
+          onClick={onOpenFeatures}
+          className={open ? "w-full justify-start gap-2" : "w-8 px-0"}
+          size={open ? "default" : "icon"}
+          aria-label="Features"
+          title="Features"
+        >
+          <Sparkles className="size-4 text-primary" />
+          {open && "Features"}
+        </Button>
+      </div>
     </aside>
   );
 }
