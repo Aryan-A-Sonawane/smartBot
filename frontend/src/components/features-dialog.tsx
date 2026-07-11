@@ -80,28 +80,27 @@ export function FeaturesDialog({ open, onClose }: { open: boolean; onClose: () =
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
-        <div className="relative overflow-hidden border-b border-border px-5 py-5 sm:px-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent" />
-          <div className="relative flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="size-5" />
+            </span>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-5 shrink-0 text-primary" />
-                <h2 className="text-base font-semibold leading-tight sm:text-lg">
-                  What makes SmartBot special
-                </h2>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                A deployed, agentic multimodal assistant — far more than a thin wrapper over an LLM API.
+              <h2 className="text-base font-semibold leading-snug sm:text-lg">
+                What makes SmartBot special
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                A deployed, agentic multimodal assistant.
               </p>
             </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="-mr-1 shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <X className="size-5" />
-            </button>
           </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-1 shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="size-5" />
+          </button>
         </div>
 
         <div className="grid gap-3 overflow-y-auto p-4 sm:grid-cols-2 sm:p-5">
