@@ -20,6 +20,8 @@ class ToolContext:
     docs: list[ExtractedDoc]
     gemini: GeminiClient
     prefer_pro: bool = False
+    # faster-whisper size, used by the YouTube yt-dlp fallback for audio STT.
+    whisper_model: str = "base"
     # Running token totals across every LLM call in this request.
     input_tokens: int = 0
     output_tokens: int = 0

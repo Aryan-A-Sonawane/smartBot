@@ -18,8 +18,15 @@ def frame(payload: dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
-def plan_event(steps: list[TraceStep]) -> str:
-    return frame({"type": "plan", "steps": [s.model_dump(by_alias=True) for s in steps]})
+def plan_event(steps: list[TraceStep], intent: str = "", goal: str = "") -> str:
+    return frame(
+        {
+            "type": "plan",
+            "steps": [s.model_dump(by_alias=True) for s in steps],
+            "intent": intent,
+            "goal": goal,
+        }
+    )
 
 
 def step_event(step: TraceStep) -> str:
@@ -46,6 +53,10 @@ def token_event(text: str) -> str:
 
 def clarify_event(question: str) -> str:
     return frame({"type": "clarify", "question": question})
+
+
+def suggestions_event(questions: list[str]) -> str:
+    return frame({"type": "suggestions", "questions": questions})
 
 
 def error_event(message: str) -> str:

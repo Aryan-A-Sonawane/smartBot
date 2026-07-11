@@ -35,13 +35,14 @@ export async function runAgent(
 //   data: {"type":"error","message":"..."}
 
 type ServerEvent =
-  | { type: "plan"; steps: TraceStep[] }
+  | { type: "plan"; steps: TraceStep[]; intent?: string; goal?: string }
   | { type: "step"; step: TraceStep }
   | { type: "extracted"; docs: ExtractedDoc[] }
   | { type: "cost_estimate"; cost: CostInfo }
   | { type: "cost_actual"; cost: CostInfo }
   | { type: "token"; text: string }
   | { type: "clarify"; question: string }
+  | { type: "suggestions"; questions: string[] }
   | { type: "done" }
   | { type: "error"; message: string };
 
@@ -56,6 +57,9 @@ async function runAgentReal(
     form.append("query", input.query);
     for (const a of input.attachments) {
       if (a.file) form.append("files", a.file, a.name);
+    }
+    if (input.priorContext?.length) {
+      form.append("prior_context", JSON.stringify(input.priorContext));
     }
 
     const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat`, {
@@ -99,7 +103,7 @@ async function runAgentReal(
 function dispatch(event: ServerEvent, ev: AgentEvents): void {
   switch (event.type) {
     case "plan":
-      ev.onPlan?.(event.steps);
+      ev.onPlan?.(event.steps, event.intent, event.goal);
       break;
     case "step":
       ev.onStepUpdate?.(event.step);
@@ -118,6 +122,9 @@ function dispatch(event: ServerEvent, ev: AgentEvents): void {
       break;
     case "clarify":
       ev.onClarify?.(event.question);
+      break;
+    case "suggestions":
+      ev.onSuggestions?.(event.questions);
       break;
     case "error":
       ev.onError?.(event.message);

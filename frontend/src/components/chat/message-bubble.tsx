@@ -2,16 +2,18 @@
 
 import {
   AlertTriangle,
+  ArrowUpRight,
   AudioLines,
   Bot,
   FileText,
   HelpCircle,
   ImageIcon,
+  Loader2,
   File as FileIcon,
 } from "lucide-react";
 import { Markdown } from "@/components/chat/markdown";
 import { cn } from "@/lib/utils";
-import type { Attachment, AttachmentKind, Message } from "@/lib/types";
+import type { Attachment, AttachmentKind, Message, TraceStep } from "@/lib/types";
 
 const KIND_ICON: Record<AttachmentKind, typeof FileIcon> = {
   image: ImageIcon,
@@ -39,7 +41,13 @@ function AttachmentChips({ items }: { items: Attachment[] }) {
   );
 }
 
-export function MessageBubble({ message }: { message: Message }) {
+export function MessageBubble({
+  message,
+  onPickSuggestion,
+}: {
+  message: Message;
+  onPickSuggestion?: (q: string) => void;
+}) {
   const isUser = message.role === "user";
 
   if (isUser) {
@@ -47,7 +55,7 @@ export function MessageBubble({ message }: { message: Message }) {
       <div className="flex flex-col items-end">
         <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-primary-foreground">
           {message.content && (
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
               {message.content}
             </p>
           )}
@@ -83,7 +91,7 @@ export function MessageBubble({ message }: { message: Message }) {
             <Markdown>{message.content}</Markdown>
           </div>
         ) : thinking ? (
-          <ThinkingDots />
+          <StatusLine step={currentStage(message)} />
         ) : (
           <>
             <Markdown>{message.content}</Markdown>
@@ -92,18 +100,53 @@ export function MessageBubble({ message }: { message: Message }) {
             )}
           </>
         )}
+
+        {!message.streaming &&
+          !message.error &&
+          message.suggestions &&
+          message.suggestions.length > 0 && (
+            <div className="mt-3 flex flex-col items-start gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Suggested follow-ups
+              </span>
+              {message.suggestions.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => onPickSuggestion?.(q)}
+                  className="group flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-left text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                >
+                  <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
       </div>
     </div>
   );
 }
 
-function ThinkingDots() {
+// The stage the agent is currently on (or the last one), for the live status.
+function currentStage(message: Message): TraceStep | undefined {
+  const trace = message.trace ?? [];
+  return [...trace].reverse().find((s) => s.status === "running") ?? trace[trace.length - 1];
+}
+
+// A live "thinking" line that names the actual pipeline stage in progress —
+// e.g. "Running pdf_extract…", "Refine / self-check…" — instead of a spinner.
+function StatusLine({ step }: { step?: TraceStep }) {
+  const label = !step
+    ? "Working…"
+    : step.status === "running"
+      ? `Running ${step.tool}…`
+      : `${step.label}…`;
   return (
-    <div className="flex items-center gap-1 py-1 text-muted-foreground">
-      <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-current" />
-      <span className="ml-2 text-xs">Working…</span>
+    <div className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
+      <Loader2 className="size-4 shrink-0 animate-spin text-primary" />
+      <span className="font-medium">{label}</span>
+      {step?.detail && (
+        <span className="hidden truncate text-xs opacity-70 sm:inline">· {step.detail}</span>
+      )}
     </div>
   );
 }

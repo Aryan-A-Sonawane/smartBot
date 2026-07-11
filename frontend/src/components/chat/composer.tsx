@@ -25,6 +25,7 @@ import type { Attachment, AttachmentKind } from "@/lib/types";
 
 export type ComposerHandle = {
   setText: (t: string) => void;
+  addAttachments: (files: File[]) => void;
   focus: () => void;
 };
 
@@ -59,6 +60,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
         taRef.current?.focus();
       });
     },
+    addAttachments: (incoming) => addFiles(incoming),
     focus: () => taRef.current?.focus(),
   }));
 
@@ -69,7 +71,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
     ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
   }
 
-  function addFiles(list: FileList | null) {
+  function addFiles(list: FileList | File[] | null) {
     if (!list) return;
     const next: Attachment[] = Array.from(list).map((f) => ({
       id: uid("file"),

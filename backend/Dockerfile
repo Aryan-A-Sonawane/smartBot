@@ -5,11 +5,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-# System deps: ffmpeg (audio), tesseract (OCR), poppler (pdf->image fallback).
+# System deps: ffmpeg (audio STT + yt-dlp), tesseract (image/PDF OCR fallback).
+# Scanned PDFs are rasterised by PyMuPDF itself, so poppler is not needed.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     tesseract-ocr \
-    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

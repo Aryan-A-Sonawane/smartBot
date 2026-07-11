@@ -29,6 +29,7 @@ env/
 *.pt
 *.onnx
 faster-whisper-models/
+.models/
 
 # ---- OS / editor ----
 .DS_Store

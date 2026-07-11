@@ -12,8 +12,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Machine names of the tools the agent can chain. Must match the frontend.
+# Machine names of the tools/stages the agent can chain. Must match the frontend.
+# "understand" and "refine" are orchestration stages (not tools) surfaced in the
+# trace so the full pipeline is visible.
 ToolName = Literal[
+    "understand",
     "image_ocr",
     "pdf_extract",
     "audio_transcribe",
@@ -24,6 +27,7 @@ ToolName = Literal[
     "code_explain",
     "structured_extract",
     "answer",
+    "refine",
     "compose",
 ]
 
@@ -49,7 +53,8 @@ class TraceStep(_CamelModel):
     id: str
     tool: ToolName
     label: str
-    rationale: str | None = None
+    rationale: str | None = None  # static "why this tool" hint
+    detail: str | None = None  # runtime "what actually happened" (engine, fallback, result)
     status: StepStatus = StepStatus.pending
     duration_ms: int | None = Field(default=None, alias="durationMs")
 

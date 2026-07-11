@@ -12,7 +12,6 @@ google-generativeai==0.8.3
 pymupdf==1.25.1
 pillow==11.1.0
 pytesseract==0.3.13
-pdf2image==1.17.0
 faster-whisper==1.1.1
 
 # ---- Web / cross-input ----
@@ -20,6 +19,9 @@ httpx==0.28.1
 beautifulsoup4==4.12.3
 lxml==5.3.0
 youtube-transcript-api==0.6.3
+# Lower-bounded, not pinned: YouTube breaks older releases, so build with the
+# newest available. Used only by the YouTube audio fallback.
+yt-dlp>=2024.11.04
 
 # ---- Tooling / tests ----
 pytest==8.3.4

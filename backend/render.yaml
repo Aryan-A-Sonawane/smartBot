@@ -6,7 +6,10 @@ services:
     runtime: docker
     rootDir: backend
     dockerfilePath: ./Dockerfile
-    plan: starter
+    # Free tier: no cost, but 512 MB RAM + spins down after inactivity. Text/PDF/
+    # image/YouTube work well; for reliable AUDIO transcription bump to a paid
+    # plan (2 GB) and set WHISPER_MODEL=base|small. See README > Deployment.
+    plan: free
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -16,9 +19,11 @@ services:
         value: gemini-2.5-flash
       - key: GEMINI_MODEL_PRO
         value: gemini-2.5-pro
+      - key: GEMINI_USE_PRO
+        value: "false" # flash-only; set true only if the key has high pro limits
       - key: WHISPER_MODEL
-        value: base
+        value: tiny # fits the free tier's 512 MB RAM; use base/small on a larger plan
       - key: MAX_FILE_MB
         value: "25"
       - key: ALLOWED_ORIGINS
-        sync: false # e.g. https://your-frontend.vercel.app
+        sync: false # set to your Vercel URL, e.g. https://smartbot.vercel.app

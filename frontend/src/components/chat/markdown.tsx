@@ -14,7 +14,7 @@ export function Markdown({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-3 text-[15px] leading-relaxed", className)}>
+    <div className={cn("space-y-3 break-words text-[15px] leading-relaxed", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

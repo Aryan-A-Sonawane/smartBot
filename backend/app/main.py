@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 
 from fastapi import Depends, FastAPI, Form, UploadFile
@@ -18,6 +19,7 @@ from .config import Settings, get_settings
 from .deps import get_gemini_client, get_registry, get_settings_dep
 from .gemini_client import GeminiClient
 from .pipeline.base import InputFile
+from .schemas import ExtractedDoc
 from .tools.registry import ToolRegistry
 
 logging.basicConfig(level=logging.INFO)
@@ -55,9 +57,28 @@ async def root() -> dict:
     return {"service": "smartbot", "docs": "/docs", "health": "/health"}
 
 
+def _parse_prior_context(raw: str) -> list[ExtractedDoc]:
+    """Parse the follow-up ``prior_context`` JSON into docs, tolerating junk."""
+    if not raw.strip():
+        return []
+    try:
+        items = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Ignoring malformed prior_context payload")
+        return []
+    docs: list[ExtractedDoc] = []
+    for item in items if isinstance(items, list) else []:
+        try:
+            docs.append(ExtractedDoc.model_validate(item))
+        except Exception:
+            continue
+    return docs
+
+
 @app.post("/chat")
 async def chat(
     query: str = Form(default=""),
+    prior_context: str = Form(default=""),
     files: list[UploadFile] | None = None,
     settings: Settings = Depends(get_settings_dep),
     gemini: GeminiClient = Depends(get_gemini_client),
@@ -79,9 +100,18 @@ async def chat(
             )
         )
 
+    # Follow-up turns replay previously extracted docs so the user need not
+    # re-upload (in-session memory). Malformed entries are skipped, not fatal.
+    prior_docs = _parse_prior_context(prior_context)
+
     async def event_stream():
         async for frame in run_agent(
-            query, inputs, gemini=gemini, settings=settings, registry=registry
+            query,
+            inputs,
+            gemini=gemini,
+            settings=settings,
+            registry=registry,
+            prior_docs=prior_docs,
         ):
             yield frame
 

@@ -228,24 +228,37 @@ Open **http://localhost:3000**. If `NEXT_PUBLIC_API_URL` is unset the UI runs a 
 
 ## Deployment
 
-### Backend → Render (Docker)
+Do the four steps in order — it avoids the CORS chicken-and-egg (each side needs the other's URL).
 
-1. Push the repo to GitHub.
-2. In Render: **New → Blueprint**, select the repo. Render reads `backend/render.yaml` and provisions a Docker web service rooted at `backend/`.
-3. Set environment variables in the Render dashboard:
-   - `GEMINI_API_KEY` — your key (marked `sync: false`, never stored in the repo).
-   - `ALLOWED_ORIGINS` — your Vercel URL, e.g. `https://smartbot.vercel.app`.
-   - Model/whisper/size vars are pre-filled by the blueprint.
-4. Deploy. Health check path is `/health`. Note the public URL (e.g. `https://smartbot-backend.onrender.com`).
+### 0. Push to GitHub
+```bash
+git add -A && git commit -m "Deploy" && git push
+```
 
-> The first request after a cold start may be slow while the Whisper model loads. Render's free tier also sleeps on inactivity.
+### 1. Frontend → Vercel (get the frontend URL first)
+1. Vercel → **Add New → Project**, import the repo.
+2. Set **Root Directory = `frontend`** (Framework auto-detects as Next.js).
+3. Deploy (no env var yet → it runs in built-in **mock mode**). Copy the URL, e.g. `https://smartbot.vercel.app`. **This is the primary demo URL.**
 
-### Frontend → Vercel
+### 2. Backend → Render (Docker blueprint)
+1. Render → **New → Blueprint**, select the repo → it reads `backend/render.yaml` (Docker web service rooted at `backend/`).
+2. Set these in the Render dashboard (both are `sync: false`, never in the repo):
+   - `GEMINI_API_KEY` — your key from [AI Studio](https://aistudio.google.com/apikey).
+   - `ALLOWED_ORIGINS` — the Vercel URL from step 1 (e.g. `https://smartbot.vercel.app`).
+3. Deploy. Health check is `/health`. Copy the URL, e.g. `https://smartbot-api.onrender.com`.
 
-1. In Vercel: **New Project**, import the repo, set **Root Directory = `frontend`**.
-2. Add env var `NEXT_PUBLIC_API_URL` = your Render backend URL.
-3. Deploy. Vercel gives a public HTTPS URL — this is the **primary demo URL**.
-4. Back in Render, make sure `ALLOWED_ORIGINS` includes this Vercel URL, then redeploy the backend so CORS allows it.
+### 3. Point the frontend at the backend
+1. Vercel → your project → **Settings → Environment Variables** → add `NEXT_PUBLIC_API_URL` = the Render URL from step 2.
+2. **Redeploy** the frontend (Deployments → ⋯ → Redeploy) so the var is baked in.
+
+### 4. Verify
+- `https://<render-url>/health` → `{"status":"ok","llm_configured":true}`.
+- Open the Vercel URL, load a sample from the gallery, and send.
+
+**Free-tier notes (important):**
+- Render **free** = 512 MB RAM and **spins down after ~15 min** idle (first request then takes ~50 s to wake). Text / PDF / image / YouTube work well.
+- **Audio** transcription is memory-heavy: the blueprint uses `WHISPER_MODEL=tiny` so it fits 512 MB. For better audio accuracy, upgrade the Render service to a paid plan (2 GB) and set `WHISPER_MODEL=base` (or `small`).
+- To keep the demo warm, hit `/health` on a cron (e.g. cron-job.org) or upgrade off the free plan.
 
 ---
 

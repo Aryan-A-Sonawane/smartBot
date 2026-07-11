@@ -22,7 +22,7 @@ async def _route(file: InputFile, gemini: GeminiClient, whisper_model: str) -> E
         if kind == "image":
             return await extract_image(file, gemini)
         if kind == "pdf":
-            return await extract_pdf(file)
+            return await extract_pdf(file, gemini)
         if kind == "audio":
             return await extract_audio(file, whisper_model)
         # Unknown type: try to read as UTF-8 text, else flag unsupported.

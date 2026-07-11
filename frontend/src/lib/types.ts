@@ -15,8 +15,9 @@ export type Attachment = {
 // Lifecycle of one step in the agent's plan.
 export type StepStatus = "pending" | "running" | "done" | "error";
 
-// Machine names of the tools the agent can chain.
+// Machine names of the tools/stages the agent can chain.
 export type ToolName =
+  | "understand"
   | "image_ocr"
   | "pdf_extract"
   | "audio_transcribe"
@@ -27,6 +28,7 @@ export type ToolName =
   | "code_explain"
   | "structured_extract"
   | "answer"
+  | "refine"
   | "compose";
 
 // One step in the agent's tool chain — powers the trace list AND the graph.
@@ -34,7 +36,8 @@ export type TraceStep = {
   id: string;
   tool: ToolName;
   label: string; // human-readable, e.g. "Extract PDF text"
-  rationale?: string; // the "why this tool" one-liner
+  rationale?: string; // the static "why this tool" one-liner
+  detail?: string; // runtime "what actually happened" (engine, fallback, result)
   status: StepStatus;
   durationMs?: number;
 };
@@ -65,6 +68,9 @@ export type Message = {
   extracted?: ExtractedDoc[];
   trace?: TraceStep[];
   cost?: CostInfo;
+  intent?: string; // detected intent (e.g. "answer")
+  goal?: string; // one-line "understood goal" for the agent-activity panel
+  suggestions?: string[]; // follow-up questions the user might ask next
   needsClarification?: boolean;
   streaming?: boolean; // true while tokens are still arriving
   error?: string;
@@ -83,16 +89,20 @@ export type Session = {
 export type AgentInput = {
   query: string;
   attachments: Attachment[];
+  // Docs extracted on earlier turns, replayed so follow-ups keep context
+  // without re-uploading the files (in-session memory).
+  priorContext?: ExtractedDoc[];
 };
 
 export type AgentEvents = {
-  onPlan?: (steps: TraceStep[]) => void;
+  onPlan?: (steps: TraceStep[], intent?: string, goal?: string) => void;
   onStepUpdate?: (step: TraceStep) => void;
   onExtracted?: (docs: ExtractedDoc[]) => void;
   onToken?: (text: string) => void;
   onCostEstimate?: (cost: CostInfo) => void;
   onCostActual?: (cost: CostInfo) => void;
   onClarify?: (question: string) => void;
+  onSuggestions?: (questions: string[]) => void;
   onDone?: () => void;
   onError?: (message: string) => void;
 };

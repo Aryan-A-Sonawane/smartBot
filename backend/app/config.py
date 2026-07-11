@@ -7,16 +7,23 @@ pydantic-settings so the app is 12-factor friendly and easy to deploy.
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Anchor the .env to backend/.env (this file is backend/app/config.py) so it
+# loads no matter which directory the server is launched from. A relative
+# "path" only works when the CWD happens to be backend/, which is a common
+# cause of "the API key isn't detected".
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
     """Typed application settings, populated from the environment."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -25,6 +32,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
     gemini_model_fast: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL_FAST")
     gemini_model_pro: str = Field(default="gemini-2.5-pro", alias="GEMINI_MODEL_PRO")
+    # Flash-only by default. Pro has far lower rate limits, so escalating hard
+    # tasks to it (and the flash->pro fallback) is opt-in via GEMINI_USE_PRO.
+    use_pro: bool = Field(default=False, alias="GEMINI_USE_PRO")
 
     # ----- CORS -----
     allowed_origins: str = Field(default="http://localhost:3000", alias="ALLOWED_ORIGINS")
@@ -42,6 +52,13 @@ class Settings(BaseSettings):
     def has_llm(self) -> bool:
         """Whether a Gemini API key is configured."""
         return bool(self.gemini_api_key.strip())
+
+    def model_for(self, prefer_pro: bool) -> str:
+        """Pick the model for a call: pro only when it's enabled AND the planner
+        judged the task hard; otherwise the fast (flash) model."""
+        if prefer_pro and self.use_pro:
+            return self.gemini_model_pro
+        return self.gemini_model_fast
 
 
 # Gemini pricing (USD per 1M tokens). Used by the cost estimator. These are

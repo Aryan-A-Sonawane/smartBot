@@ -39,7 +39,7 @@ export function ExtractedPanel({ docs }: { docs: ExtractedDoc[] }) {
                 </Badge>
               )}
             </div>
-            <pre className="max-h-64 overflow-auto whitespace-pre-wrap px-3 py-2 font-mono text-xs leading-relaxed text-muted-foreground">
+            <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words px-3 py-2 font-mono text-xs leading-relaxed text-muted-foreground">
               {d.content}
             </pre>
           </div>

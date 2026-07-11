@@ -3,7 +3,11 @@
 import { Bot } from "lucide-react";
 import { SampleGallery } from "@/components/chat/sample-gallery";
 
-export function EmptyState({ onPick }: { onPick: (query: string) => void }) {
+export function EmptyState({
+  onLoad,
+}: {
+  onLoad: (query: string, files: File[]) => void;
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex flex-col items-center gap-3">
@@ -18,7 +22,7 @@ export function EmptyState({ onPick }: { onPick: (query: string) => void }) {
           </p>
         </div>
       </div>
-      <SampleGallery onPick={onPick} />
+      <SampleGallery onLoad={onLoad} />
     </div>
   );
 }

@@ -26,6 +26,20 @@ def is_youtube(url: str) -> bool:
     return bool(_YT_ID_RE.search(url or ""))
 
 
+_CROSS_INPUT_RE = re.compile(
+    r"\b(compare|contrast|both|all files|all docs|each (file|doc|one)|difference|differ|"
+    r"versus|vs\.?|relate|correlat|previous (file|doc|one)|earlier (file|doc|one)|"
+    r"other (file|doc)|across|combine|combined|together|same topic)\b",
+    re.IGNORECASE,
+)
+
+
+def is_cross_input(query: str) -> bool:
+    """True when the query refers to several inputs at once (compare/both/…), so
+    prior documents should be reasoned over together rather than ignored."""
+    return bool(_CROSS_INPUT_RE.search(query or ""))
+
+
 def youtube_id(url: str) -> str | None:
     m = _YT_ID_RE.search(url or "")
     return m.group(1) if m else None

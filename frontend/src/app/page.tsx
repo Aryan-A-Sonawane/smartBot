@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Bot, PanelRightOpen } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bot, Menu, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Sidebar } from "@/components/sidebar";
@@ -11,52 +11,87 @@ import { EmptyState } from "@/components/chat/empty-state";
 import { Composer, type ComposerHandle } from "@/components/chat/composer";
 import { useChat } from "@/hooks/use-chat";
 
+const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
+
 export default function Home() {
-  const { sessions, activeId, active, isRunning, send, stop, newChat, selectChat } =
+  const { sessions, activeId, active, isRunning, send, stop, newChat, selectChat, deleteChat } =
     useChat();
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const composerRef = useRef<ComposerHandle>(null);
 
+  // Start with both side panels closed on small screens (they're overlays there).
+  useEffect(() => {
+    if (isMobile()) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  }, []);
+
   const messages = active.messages;
   const hasMessages = messages.length > 0;
 
-  // The most recent assistant message drives the inspector panels.
-  const latestAssistant = useMemo(
-    () => [...messages].reverse().find((m) => m.role === "assistant"),
-    [messages],
-  );
-
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-dvh overflow-hidden bg-background text-foreground">
+      {/* Mobile backdrop behind an open drawer */}
+      {(leftOpen || rightOpen) && (
+        <button
+          aria-label="Close panels"
+          onClick={() => {
+            setLeftOpen(false);
+            setRightOpen(false);
+          }}
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+        />
+      )}
+
       {/* LEFT: chat history */}
       <Sidebar
         sessions={sessions}
         activeId={activeId}
         open={leftOpen}
         onToggle={() => setLeftOpen((v) => !v)}
-        onSelect={selectChat}
-        onNew={newChat}
+        onSelect={(id) => {
+          selectChat(id);
+          if (isMobile()) setLeftOpen(false);
+        }}
+        onNew={() => {
+          newChat();
+          if (isMobile()) setLeftOpen(false);
+        }}
+        onDelete={deleteChat}
       />
 
       {/* MIDDLE: chat window */}
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Bot className="size-5 text-primary" />
+        <header className="flex items-center justify-between border-b border-border px-3 py-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label="Open chat list"
+              onClick={() => setLeftOpen(true)}
+            >
+              <Menu className="size-4" />
+            </Button>
+            <Bot className="size-5 shrink-0 text-primary" />
             <span className="text-sm font-semibold">SmartBot</span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
+            <span className="hidden truncate text-xs text-muted-foreground sm:inline">
               Multimodal agentic assistant
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <ModeToggle />
             {!rightOpen && (
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Open panels"
-                onClick={() => setRightOpen(true)}
+                aria-label="Open agent activity"
+                onClick={() => {
+                  setRightOpen(true);
+                  if (isMobile()) setLeftOpen(false);
+                }}
               >
                 <PanelRightOpen className="size-4" />
               </Button>
@@ -66,25 +101,28 @@ export default function Home() {
 
         <div className="min-h-0 flex-1">
           {hasMessages ? (
-            <MessageList messages={messages} />
+            <MessageList
+              messages={messages}
+              onPickSuggestion={(q) => composerRef.current?.setText(q)}
+            />
           ) : (
-            <EmptyState onPick={(q) => composerRef.current?.setText(q)} />
+            <EmptyState
+              onLoad={(q, files) => {
+                composerRef.current?.setText(q);
+                if (files.length) composerRef.current?.addAttachments(files);
+              }}
+            />
           )}
         </div>
 
         <div className="border-t border-border p-3">
-          <Composer
-            ref={composerRef}
-            onSend={send}
-            isRunning={isRunning}
-            onStop={stop}
-          />
+          <Composer ref={composerRef} onSend={send} isRunning={isRunning} onStop={stop} />
         </div>
       </main>
 
       {/* RIGHT: agent transparency */}
       <Inspector
-        message={latestAssistant}
+        messages={messages}
         open={rightOpen}
         onClose={() => setRightOpen(false)}
       />

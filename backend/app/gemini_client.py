@@ -114,9 +114,12 @@ class GeminiClient:
             prompt_parts.extend(parts)
         prompt_parts.append(prompt)
 
-        primary = self._settings.gemini_model_pro if prefer_pro else self._settings.gemini_model_fast
-        secondary = self._settings.gemini_model_pro
-        models = [primary] if primary == secondary else [primary, secondary]
+        # Flash-only unless GEMINI_USE_PRO is set; then hard tasks start on pro
+        # and non-pro calls may escalate flash->pro on failure.
+        primary = self._settings.model_for(prefer_pro)
+        models = [primary]
+        if self._settings.use_pro and self._settings.gemini_model_pro != primary:
+            models.append(self._settings.gemini_model_pro)
 
         last_exc: Exception | None = None
         for idx, model_name in enumerate(models):

@@ -5,6 +5,7 @@ import ReactFlow, {
   Background,
   Controls,
   MarkerType,
+  Position,
   type Edge,
   type Node,
 } from "reactflow";
@@ -15,33 +16,60 @@ import type { StepStatus, TraceStep } from "@/lib/types";
 function nodeStyle(status: StepStatus): React.CSSProperties {
   const base: React.CSSProperties = {
     borderRadius: 10,
-    padding: "8px 12px",
+    padding: "8px 10px",
     fontSize: 12,
-    fontWeight: 500,
     border: "1px solid var(--border)",
     background: "var(--card)",
     color: "var(--card-foreground)",
-    width: 160,
-    textAlign: "center",
+    width: 220,
+    textAlign: "left",
   };
   if (status === "running")
     return { ...base, border: "1px solid var(--primary)", background: "color-mix(in oklab, var(--primary) 12%, var(--card))" };
-  if (status === "done")
-    return { ...base, border: "1px solid #10b981" };
-  if (status === "error")
-    return { ...base, border: "1px solid var(--destructive)" };
+  if (status === "done") return { ...base, border: "1px solid #10b981" };
+  if (status === "error") return { ...base, border: "1px solid var(--destructive)" };
   return { ...base, opacity: 0.6 };
+}
+
+const DOT: Record<StepStatus, string> = {
+  pending: "#9ca3af",
+  running: "var(--primary)",
+  done: "#10b981",
+  error: "var(--destructive)",
+};
+
+// A node reads: "running <tool>…" while active, then the label + what it did.
+function NodeLabel({ step }: { step: TraceStep }) {
+  const running = step.status === "running";
+  const head = running ? `running ${step.tool}…` : step.label;
+  const body = running ? step.rationale ?? "working…" : step.detail ?? step.tool;
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span
+          className={"inline-block size-2 shrink-0 rounded-full" + (running ? " animate-pulse" : "")}
+          style={{ background: DOT[step.status] }}
+        />
+        <span className="font-medium">{head}</span>
+      </div>
+      {body && (
+        <div className="mt-1 line-clamp-3 text-[10px] font-normal leading-snug opacity-70">
+          {body}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ToolGraph({ steps }: { steps: TraceStep[] }) {
   const { nodes, edges } = useMemo(() => {
     const nodes: Node[] = steps.map((s, i) => ({
       id: s.id,
-      data: { label: s.label },
-      position: { x: 20, y: i * 80 },
+      data: { label: <NodeLabel step={s} /> },
+      position: { x: 20, y: i * 104 },
       style: nodeStyle(s.status),
-      sourcePosition: "bottom" as const,
-      targetPosition: "top" as const,
+      sourcePosition: Position.Bottom,
+      targetPosition: Position.Top,
     }));
 
     const edges: Edge[] = steps.slice(1).map((s, i) => ({
@@ -59,13 +87,17 @@ export function ToolGraph({ steps }: { steps: TraceStep[] }) {
   if (!steps.length) {
     return (
       <p className="p-3 text-sm text-muted-foreground">
-        A graph of the tools the agent invoked (and their order) appears here.
+        A graph of the tools each question invoked (and their order) appears here.
       </p>
     );
   }
 
+  // Size the canvas to the chain so fitView keeps the node text readable
+  // instead of shrinking a tall chain into an unreadable thumbnail.
+  const height = Math.max(240, steps.length * 104 + 24);
+
   return (
-    <div className="h-full min-h-[260px] w-full">
+    <div className="w-full" style={{ height }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

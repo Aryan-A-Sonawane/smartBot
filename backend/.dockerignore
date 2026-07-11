@@ -1,0 +1,15 @@
+# Keep the Docker build context small and reproducible — none of this belongs
+# in the image (and the local .venv/.models are large + platform-specific).
+.venv/
+.models/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+tests/
+samples/
+.env
+.env.*
+!.env.example

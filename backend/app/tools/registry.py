@@ -24,6 +24,7 @@ ToolFn = Callable[[ToolContext], Awaitable[ToolResult]]
 
 # Human-readable labels + one-line "why this tool" rationales for the trace.
 TOOL_META: dict[str, dict[str, str]] = {
+    "understand": {"label": "Understand request", "rationale": "Tokenize, detect intent, and check the request is answerable."},
     "image_ocr": {"label": "OCR image", "rationale": "Image attached — extract text via OCR."},
     "pdf_extract": {"label": "Parse PDF", "rationale": "PDF attached — extract text (OCR fallback if scanned)."},
     "audio_transcribe": {"label": "Transcribe audio", "rationale": "Audio attached — run speech-to-text."},
@@ -34,6 +35,7 @@ TOOL_META: dict[str, dict[str, str]] = {
     "code_explain": {"label": "Explain code", "rationale": "Explain, flag bugs, note time complexity."},
     "structured_extract": {"label": "Extract structured data", "rationale": "Pull action items / tables / entities."},
     "answer": {"label": "Answer", "rationale": "Answer using the combined context."},
+    "refine": {"label": "Refine / self-check", "rationale": "Critic validates the output format and repairs it if needed."},
     "compose": {"label": "Compose response", "rationale": "Format the final text-only answer."},
 }
 
