@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Activity, Bot, Menu, PanelRightOpen, Sparkles } from "lucide-react";
+import { Bot, Menu, PanelRightOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Sidebar } from "@/components/sidebar";
@@ -89,24 +89,24 @@ export default function Home() {
               Multimodal agentic assistant
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {/* Mobile: quick access to the Features showcase */}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {/* Mobile: highlighted quick access to the Features showcase */}
             <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
+              size="sm"
+              className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 md:hidden"
               aria-label="Features"
               onClick={() => setFeaturesOpen(true)}
             >
-              <Sparkles className="size-4 text-primary" />
+              <Sparkles className="size-4" />
+              Features
             </Button>
             <ModeToggle />
             {!rightOpen && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:inline-flex"
                 aria-label="Open agent activity"
+                title="Agent activity"
                 onClick={openInspector}
               >
                 <PanelRightOpen className="size-4" />
@@ -135,18 +135,6 @@ export default function Home() {
           <Composer ref={composerRef} onSend={send} isRunning={isRunning} onStop={stop} />
         </div>
       </main>
-
-      {/* Mobile: sticky tab so testers discover the agent-activity panel */}
-      {!rightOpen && (
-        <button
-          onClick={openInspector}
-          aria-label="Open agent activity"
-          className="fixed right-0 top-1/3 z-30 flex items-center gap-1 rounded-l-lg bg-primary py-3 pl-1 pr-1.5 text-[11px] font-semibold tracking-wide text-primary-foreground shadow-lg md:hidden"
-        >
-          <span className="[writing-mode:vertical-rl]">Agent activity</span>
-          <Activity className="size-3.5 rotate-90" />
-        </button>
-      )}
 
       {/* RIGHT: agent transparency */}
       <Inspector messages={messages} open={rightOpen} onClose={() => setRightOpen(false)} />

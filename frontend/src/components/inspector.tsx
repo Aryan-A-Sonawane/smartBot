@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Braces, Download, MessageSquare, PanelRightClose } from "lucide-react";
+import { Braces, Download, MessageSquare, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -79,8 +79,19 @@ export function Inspector({ messages, open, onClose }: Props) {
       )}
     >
       <div className="flex items-center justify-between p-2">
-        <div className="flex items-center gap-2 px-2">
-          <span className="text-xs font-semibold text-muted-foreground">Agent activity</span>
+        <div className="flex min-w-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Close agent activity"
+            title="Close"
+            onClick={onClose}
+          >
+            <X className="size-4" />
+          </Button>
+          <span className="truncate text-xs font-semibold text-muted-foreground">
+            Agent activity
+          </span>
           {isMock() && (
             <Badge variant="outline" className="text-[10px]">
               demo data
@@ -122,9 +133,6 @@ export function Inspector({ messages, open, onClose }: Props) {
               </Button>
             </>
           )}
-          <Button variant="ghost" size="icon" aria-label="Collapse panels" onClick={onClose}>
-            <PanelRightClose className="size-4" />
-          </Button>
         </div>
       </div>
 

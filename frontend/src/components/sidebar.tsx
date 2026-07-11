@@ -139,17 +139,19 @@ export function Sidebar({
         </ScrollArea>
       )}
 
-      {/* Bottom-left: Features showcase */}
+      {/* Bottom-left: Features showcase (highlighted) */}
       <div className="mt-auto border-t border-border p-2">
         <Button
-          variant="ghost"
           onClick={onOpenFeatures}
-          className={open ? "w-full justify-start gap-2" : "w-8 px-0"}
+          className={cn(
+            "bg-foreground text-background hover:bg-foreground/90",
+            open ? "w-full justify-start gap-2" : "w-8 px-0",
+          )}
           size={open ? "default" : "icon"}
           aria-label="Features"
           title="Features"
         >
-          <Sparkles className="size-4 text-primary" />
+          <Sparkles className="size-4" />
           {open && "Features"}
         </Button>
       </div>
