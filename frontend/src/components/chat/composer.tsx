@@ -184,7 +184,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
               adjustHeight();
             }}
             onKeyDown={onKeyDown}
-            placeholder="Ask anything, or attach an image, PDF, or audio…"
+            placeholder="Ask anything, or attach a file…"
             className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted-foreground"
           />
 
