@@ -7,6 +7,7 @@ the document discuss the same topic?").
 from __future__ import annotations
 
 from ..gemini_client import LLMUnavailable
+from ..rag.retriever import cite, retrieve
 from .base import ToolContext, ToolResult
 
 SYSTEM = (
@@ -24,7 +25,17 @@ SYSTEM = (
 
 
 async def run(ctx: ToolContext) -> ToolResult:
-    context = ctx.combined_context()
+    # RAG: for large documents, answer from the top-k relevant chunks (accuracy +
+    # relevance + latency); for small ones, retrieve() returns None and we use the
+    # full context (nothing dropped, no embedding round-trip).
+    rag_note: str | None = None
+    chunks = await retrieve(ctx.query, ctx.docs, ctx.gemini)
+    if chunks:
+        context = "\n\n".join(cite(c) for c in chunks)
+        rag_note = f"RAG: retrieved top-{len(chunks)} chunks (cosine, {ctx.gemini.embed_model})"
+    else:
+        context = ctx.combined_context()
+
     if context:
         prompt = f"Question: {ctx.query}\n\nContext from the user's inputs:\n{context}"
     else:
@@ -32,7 +43,8 @@ async def run(ctx: ToolContext) -> ToolResult:
     try:
         res = await ctx.gemini.generate(prompt, system=SYSTEM, prefer_pro=ctx.prefer_pro)
         ctx.record(res.input_tokens, res.output_tokens, res.model)
-        return ToolResult(text=res.text, notes=res.notes)
+        notes = ([rag_note] if rag_note else []) + res.notes
+        return ToolResult(text=res.text, notes=notes)
     except LLMUnavailable as exc:
         if ctx.gemini.configured:
             return ToolResult(text="", ok=False, error=f"Gemini call failed: {exc}")

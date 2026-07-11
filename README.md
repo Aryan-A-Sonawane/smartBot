@@ -42,7 +42,8 @@ Built for the **DSAI Assignment (June 2026)**.
 ## Highlights
 
 - **True multimodal input** — text + image + PDF + audio, multiple files in one request, extracted in parallel.
-- **Autonomous planner** — derives intent, detects constraints, resolves cross-input references (e.g. a URL inside a PDF), and builds the *minimum* tool chain for the goal.
+- **Autonomous planner + LLM router** — an LLM decides intent and which documents are relevant (keyword fallback offline); builds the *minimum* tool chain for the goal.
+- **RAG for document Q&A** — chunk → embed (Gemini) → in-memory cosine index → top-k page-cited chunks, gated by document size (full context for small docs, retrieval for large — optimized for accuracy, relevance, and latency).
 - **Mandatory clarify-gate** — refuses to guess on ambiguous input and asks a short follow-up instead.
 - **Self-correcting critic** — validates output format (e.g. the strict summary structure) and repairs it once if needed.
 - **Full transparency** — live plan trace, tool-call graph, extracted-text panel, and an estimate-vs-actual cost panel, all streamed over SSE.
@@ -212,6 +213,7 @@ Open **http://localhost:3000**. If `NEXT_PUBLIC_API_URL` is unset the UI runs a 
 | `GEMINI_API_KEY` | yes* | — | Gemini key from [AI Studio](https://aistudio.google.com/apikey) |
 | `GEMINI_MODEL_FAST` | no | `gemini-2.5-flash` | Fast model for most calls |
 | `GEMINI_MODEL_PRO` | no | `gemini-2.5-pro` | Heavy/ambiguous reasoning + fallback |
+| `GEMINI_EMBED_MODEL` | no | `models/gemini-embedding-001` | Embeddings for RAG retrieval |
 | `ALLOWED_ORIGINS` | no | `http://localhost:3000` | Comma-separated CORS origins (add your Vercel URL in prod) |
 | `WHISPER_MODEL` | no | `base` | faster-whisper size: tiny\|base\|small\|medium |
 | `MAX_FILE_MB` | no | `25` | Reject larger uploads |

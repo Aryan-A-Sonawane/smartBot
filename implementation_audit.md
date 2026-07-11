@@ -145,10 +145,11 @@
 
 ## ❌ What Is Missing / Not Yet Started
 
-### 1. RAG / Vector Store — ❌ intentionally not implemented (decision, not a gap)
-- **Re-assessed against the actual assignment PDF:** the word "RAG" appears **nowhere** in the assignment, and the 100-point rubric allocates it **zero** weight. Every test-case input is small (≤ 3-page PDF / 5-min audio) and fits inside Gemini 2.5's 1M-token window; there is no corpus to index and nothing exceeding the window — the only condition RAG exists to solve. Top-k retrieval would also *degrade* the cross-input compare task (TC5), which needs both docs in full.
-- **Decision (recorded in PLAN.md §2):** pass all extracted text **in full** into the tool prompt; invest in robust extraction instead. Map-reduce condensation is the escalation path if an input ever nears the context limit — no vector store.
-- **This also removes the "unlisted dependency" conflict with instructions.md §4** (no `chromadb`/`faiss`).
+### 1. RAG / Vector Store — ✅ implemented (per the company's evaluation criteria)
+- **Why:** the company's evaluation email (`instructions.md`) lists **"RAG Performance"** as a graded criterion (optimize for accuracy, relevance, latency) — even though the assignment PDF doesn't mention it. So it's implemented.
+- **What:** `backend/app/rag/` — `chunker.py` (page-aware overlapping chunks), `store.py` (in-memory cosine vector index over Gemini `gemini-embedding-001` embeddings), `retriever.py` (gated top-k). The `answer` tool uses it for document Q&A.
+- **Optimized for the 3 sub-criteria:** *latency* (small docs skip retrieval → full context, no embedding round-trip), *accuracy/relevance* (large docs → top-k page-cited chunks), *cross-input* (comparisons still use full content). numpy index = exact NN, no heavy vector DB / index-build latency.
+- **Verified live:** a buried fact in a 13k-char doc is retrieved and cited to the correct page; RAG usage shows in the trace. Offline it falls back to full context (tests stay green).
 
 ### 2. `yt-dlp` fallback for YouTube — Not implemented
 - **Where:** [`tools/youtube.py`](file:///e:/z.code/smartBot/smartBot/backend/app/tools/youtube.py) — only uses `youtube-transcript-api`; no `yt-dlp` fallback.

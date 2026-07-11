@@ -68,9 +68,26 @@ REST (`POST /chat` multipart) + **SSE** (`GET /stream`) · CORS enabled · front
 
 Pipeline-first design: extract/transcribe **everything in parallel**, then the agent plans the minimal tool chain over the combined context, executes with a trace, and a **critic pass** validates the output before returning.
 
-### Design decision — no vector store / RAG (justified deviation)
+### RAG — gated dense retrieval (optimized for accuracy, relevance, latency)
 
-Inputs in this app are user-supplied *per request* and small (the assignment's cases top out at a 3-page PDF / a 5-min audio ≈ a few thousand tokens), so they fit entirely inside Gemini 2.5's 1M-token context window with room to spare. There is no persistent corpus to index and nothing that exceeds the window, which is the only condition RAG exists to solve. Top-k retrieval would also *degrade* the cross-input reasoning task (§8 TC5), which needs both documents in full. We therefore pass every extracted input **in full**, labelled by source, into the tool prompt (`ToolContext.combined_context`). The engineering effort goes into getting 100% of the content *out of each file* — robust extraction with a Gemini-vision-first OCR path for scanned PDF/image pages that never silently drops content — rather than into retrieval. If an input ever approached the context limit, the correct escalation is **map-reduce condensation** (condense each doc, then reason over the condensations), not a vector store.
+Question-answering over documents uses retrieval-augmented generation (`app/rag/`):
+**chunk → embed → index → retrieve top-k**. Documents are split into overlapping,
+page-aware chunks (`chunker.py`), embedded with **Gemini embeddings**
+(`gemini-embedding-001`), and indexed in an **in-memory cosine vector store**
+(`store.py`, numpy — exact nearest-neighbour, no heavy vector DB, no index-build
+latency). The `answer` tool retrieves the top-k relevant chunks and answers from them,
+citing the page each fact came from.
+
+Retrieval is **gated by document size** to serve all three sub-criteria:
+- **Latency** — small docs (below ~6k chars) skip retrieval entirely and use full
+  context; no embedding round-trip, no overhead.
+- **Accuracy / relevance** — large docs are answered from the top-k semantically
+  relevant chunks (with page citations) instead of a diluted full-text dump.
+- **Cross-input** — retrieval only replaces context for single-document Q&A on large
+  inputs; comparisons/summaries still see the whole content, so nothing is dropped.
+
+Extraction still gets 100% of the content *out of each file* (Gemini-vision-first OCR,
+never silently dropping pages) — retrieval then decides what to *put into the prompt*.
 
 ---
 

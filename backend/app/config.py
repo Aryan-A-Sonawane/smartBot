@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
     gemini_model_fast: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL_FAST")
     gemini_model_pro: str = Field(default="gemini-2.5-pro", alias="GEMINI_MODEL_PRO")
+    gemini_embed_model: str = Field(
+        default="models/gemini-embedding-001", alias="GEMINI_EMBED_MODEL"
+    )
     # Flash-only by default. Pro has far lower rate limits, so escalating hard
     # tasks to it (and the flash->pro fallback) is opt-in via GEMINI_USE_PRO.
     use_pro: bool = Field(default=False, alias="GEMINI_USE_PRO")

@@ -8,6 +8,12 @@ pydantic-settings==2.7.1
 # ---- LLM ----
 google-generativeai==0.8.3
 
+# ---- RAG (retrieval) ----
+# In-memory dense-vector index (cosine top-k) over Gemini embeddings. numpy keeps
+# retrieval exact and low-latency for these corpus sizes without a heavy vector DB.
+# Lower-bounded so it resolves with whatever ctranslate2/faster-whisper need.
+numpy>=1.26
+
 # ---- Extraction: PDF / image OCR / audio STT ----
 pymupdf==1.25.1
 pillow==11.1.0

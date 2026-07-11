@@ -43,7 +43,8 @@ The LLM is **Google Gemini**. There is no other model provider.
 |---|---|---|
 | API + async server | FastAPI + Uvicorn | routes, DI via `Depends`, SSE streaming |
 | Config | `pydantic-settings` | env-driven settings, typed |
-| LLM SDK | `google-generativeai` | Gemini text + vision calls (no embeddings used) |
+| LLM SDK | `google-generativeai` | Gemini text + vision + **embeddings** (for RAG) |
+| RAG index | `numpy` | in-memory cosine vector store (chunk → embed → top-k) |
 | PDF | **PyMuPDF (`fitz`)** | digital text extraction + page rasterisation |
 | Image / scanned-PDF OCR | **Gemini Vision** (primary) + **Tesseract** (`pytesseract` + `Pillow`, fallback + confidence) | text from images and scanned pages |
 | Audio STT | **faster-whisper** | speech-to-text + clip duration |
@@ -181,7 +182,7 @@ query) — i.e. the app does prompt engineering, not raw pass-through.
 | `sentiment` | **3-vote ensemble** (3 concurrent calls, majority label) + label/confidence contract; lexicon heuristic when offline |
 | `code_explain` | structured code-analysis prompt (language, walkthrough, bugs/edge-cases, Big-O) |
 | `structured_extract` | extraction prompt that cites `[Page N]` markers; regex heuristic when offline |
-| `answer` | context-grounded reasoning prompt — uses the documents as primary source but is explicitly allowed to bring in general knowledge/estimation and state assumptions |
+| `answer` | context-grounded reasoning prompt + **RAG** (top-k page-cited chunks for large docs, full context for small); brings in general knowledge/estimation and states assumptions |
 | `youtube_transcript` | transcript API → `yt-dlp` + Whisper fallback |
 | `url_fetch` | `httpx` + BeautifulSoup readable-text extraction |
 
@@ -264,11 +265,14 @@ propose **3 follow-up questions**, streamed as a `suggestions` event.
 
 ## 11. Deliberate design decisions (stated honestly)
 
-- **No vector store / RAG.** The assignment never asks for it, its rubric gives it zero
-  weight, and every input is small enough to fit whole inside Gemini's context window.
-  Retrieval would also *hurt* the cross-input comparison task (which needs both documents in
-  full). We therefore pass extracted text **in full** and invest in robust extraction
-  instead. Documented in `PLAN.md`.
+- **RAG via gated dense retrieval.** Document Q&A uses retrieval-augmented generation
+  (`app/rag/`: chunk → embed with `gemini-embedding-001` → in-memory cosine vector index →
+  top-k). It is **gated by document size** to optimize the three sub-criteria at once:
+  *latency* (small docs skip retrieval and use full context — no embedding round-trip),
+  *accuracy/relevance* (large docs are answered from the top-k relevant, page-cited chunks
+  rather than a diluted full-text dump), and *cross-input* (comparisons/summaries still see
+  the whole content, so nothing is dropped). An in-memory numpy index (exact nearest-neighbour)
+  is used instead of a heavy vector DB — no index-build latency for these corpus sizes.
 - **LLM router with a deterministic fallback.** Intent + document-relevance are decided by an
   LLM (with full conversation context) because keyword rules are brittle ("summarize the
   sentiment" is a sentiment task, not a summary). When no key is present, a rule-based keyword

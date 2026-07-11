@@ -21,6 +21,8 @@ services:
         value: gemini-2.5-pro
       - key: GEMINI_USE_PRO
         value: "false" # flash-only; set true only if the key has high pro limits
+      - key: GEMINI_EMBED_MODEL
+        value: models/gemini-embedding-001 # embeddings for RAG retrieval
       - key: WHISPER_MODEL
         value: tiny # fits the free tier's 512 MB RAM; use base/small on a larger plan
       - key: MAX_FILE_MB

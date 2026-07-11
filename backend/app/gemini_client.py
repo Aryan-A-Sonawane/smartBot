@@ -53,6 +53,10 @@ class GeminiClient:
         not just 'running offline')."""
         return self._settings.has_llm
 
+    @property
+    def embed_model(self) -> str:
+        return self._settings.gemini_embed_model
+
     # ----- setup -----
     def _ensure(self) -> Any:
         if not self._settings.has_llm:
@@ -155,6 +159,26 @@ class GeminiClient:
                     if attempt < max_retries:
                         await asyncio.sleep(0.6 * (2**attempt))
         raise LLMUnavailable(f"all Gemini attempts failed: {last_exc}")
+
+    # ----- embeddings (for RAG retrieval) -----
+    def _embed_sync(self, texts: list[str], task_type: str) -> list[list[float]]:
+        genai = self._ensure()
+        res = genai.embed_content(
+            model=self._settings.gemini_embed_model,
+            content=texts,
+            task_type=task_type,
+        )
+        emb = res["embedding"]
+        # embed_content returns a flat list for a single string; normalise to list-of-lists.
+        return emb if emb and isinstance(emb[0], list) else [emb]
+
+    async def embed(
+        self, texts: list[str], *, task_type: str = "retrieval_document"
+    ) -> list[list[float]]:
+        """Embed a batch of texts. Raises ``LLMUnavailable`` when no key is set."""
+        if not texts:
+            return []
+        return await asyncio.to_thread(self._embed_sync, texts, task_type)
 
     @staticmethod
     def image_part(data: bytes, mime_type: str) -> dict[str, Any]:
