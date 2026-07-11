@@ -103,8 +103,8 @@ export default function Home() {
             <ModeToggle />
             {!rightOpen && (
               <Button
-                variant="ghost"
                 size="icon"
+                className="bg-foreground text-background hover:bg-foreground/90"
                 aria-label="Open agent activity"
                 title="Agent activity"
                 onClick={openInspector}

@@ -99,7 +99,7 @@ export function SampleGallery({
   }
 
   return (
-    <div className="grid w-full max-w-3xl grid-cols-1 gap-2 sm:grid-cols-2">
+    <div className="grid w-full max-w-3xl grid-cols-1 gap-2 text-left sm:grid-cols-2">
       {SAMPLES.map((s) => {
         const loading = busy === s.title;
         const Icon = loading ? Loader2 : s.icon;

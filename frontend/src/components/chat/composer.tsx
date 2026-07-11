@@ -211,7 +211,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
           )}
         </div>
       </div>
-      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+      <p className="mt-2 hidden text-center text-[11px] text-muted-foreground sm:block">
         SmartBot can make mistakes. Outputs are text-only · Enter to send, Shift+Enter for a new line.
       </p>
     </div>
